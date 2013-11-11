@@ -18,7 +18,7 @@ if [ /tmp/.limit -nt /var/cache/apt/pkgcache.bin ]; then
     # Basic survival kit
     sudo apt-get -y install htop tmux vim git build-essential ia32-libs bash-completion
     # VLC build requirements
-    sudo apt-get -y install libtool pkg-config autoconf checkinstall
+    sudo apt-get -y install libtool pkg-config autoconf checkinstall lua5.1
     # VLC dependencies
     sudo apt-get -y install liba52-0.7.4-dev libdirac-dev libdvdread-dev libkate-dev \
                             libass-dev libbluray-dev libcddb2-dev libdca-dev libfaad-dev \
@@ -46,14 +46,15 @@ if ! grep -q 'arm-bcm2708' /home/vagrant/.bashrc; then
 fi
 
 # Grab and build VLC (NOTE: we're not yet testing for rpi-omxil, since that needs to be patched in for a cross-compile)
-if [ -e /usr/local/src/vlc ]; then
-    cd /usr/local/src/vlc
-    sudo chown . vagrant:vagrant
+if [ ! -e /home/vagrant/vlc ]; then
+    source /home/vagrant/.bashrc
+    cd /home/vagrant
     git clone git://git.videolan.org/vlc.git
+    sudo chown -R vagrant:vagrant vlc
     cd vlc
+    export CC=arm-linux-gnueabihf-gcc
     ./bootstrap
-    ./configure --prefix=/usr --enable-rpi-omxil --enable-dvbpsi --enable-x264 --disable-ogg --disable-mux_ogg --enable-run-as-root --disable-qt --disable-ncurses
-
+    ./configure --target=arm-linux-gnueabihf --prefix=/usr --enable-rpi-omxil --enable-dvbpsi --enable-x264 --disable-ogg --disable-mux_ogg --enable-run-as-root --disable-qt --disable-ncurses
     # make
     # sudo checkinstall --fstrans=no --install=yes --pkgname=vlc --pkgversion "1:2.2.0-git`date +%Y%m%d`-0.0raspbian" --default
 fi
