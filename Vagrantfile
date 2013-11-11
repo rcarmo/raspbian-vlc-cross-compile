@@ -11,21 +11,50 @@ Vagrant.configure("2") do |config|
 # Check if we need to perform a weekly upgrade - this also triggers initial provisioning
 touch -d '-1 week' /tmp/.limit
 if [ /tmp/.limit -nt /var/cache/apt/pkgcache.bin ]; then
-    dpkg -add-architecture i386
-    apt-get -y update
-    apt-get -y dist-upgrade
-    apt-get -y install htop tmux vim git build-essential ia32-libs bash-completion
+    # Add i386 architecture (required by the Linaro toolchain)
+    sudo dpkg --add-architecture i386
+    sudo apt-get -y update
+    sudo apt-get -y dist-upgrade
+    # Basic survival kit
+    sudo apt-get -y install htop tmux vim git build-essential ia32-libs bash-completion
+    # VLC build requirements
+    sudo apt-get -y install libtool pkg-config autoconf checkinstall
+    # VLC dependencies
+    sudo apt-get -y install liba52-0.7.4-dev libdirac-dev libdvdread-dev libkate-dev \
+                            libass-dev libbluray-dev libcddb2-dev libdca-dev libfaad-dev \
+                            libflac-dev libmad0-dev libmodplug-dev libmpcdec-dev \
+                            libmpeg2-4-dev libogg-dev libopencv-dev libpostproc-dev \
+                            libshout3-dev libspeex-dev libspeexdsp-dev libssh2-1-dev \
+                            liblua5.1-0-dev libopus-dev libschroedinger-dev libsmbclient-dev \
+                            libtwolame-dev libx264-dev libxcb-composite0-dev libxcb-randr0-dev \
+                            libxcb-xv0-dev libzvbi-dev
 fi
 rm /tmp/.limit
+
+# Download cross-compiler toolchain
 if [ ! -e /opt/rpi ]; then
     sudo mkdir -p /opt/rpi
     cd /opt/rpi
     # use sudo to carry over all permissions
     sudo git clone git://github.com/raspberrypi/tools.git
 fi
+
+# Set up environment
 if ! grep -q 'arm-bcm2708' /home/vagrant/.bashrc; then
     echo 'export PATH=$PATH:/opt/rpi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin' >> /home/vagrant/.bashrc
     echo 'export CCPREFIX="/opt/rpi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-"' >> /home/vagrant/.bashrc
 fi
+
+if [ -e /usr/local/src/vlc ]; then
+    cd /usr/local/src/vlc
+    sudo chown . vagrant:vagrant
+    git clone git://git.videolan.org/vlc.git
+    cd vlc
+    ./bootstrap
+    ./configure --enable-rpi-omxil --enable-dvbpsi --enable-x264
+    # make
+    # sudo checkinstall --fstrans=no --install=yes --pkgname=vlc --pkgversion "1:2.2.0-git`date +%Y%m%d`-0.0raspbian" --default
+fi
+
 END
 end
