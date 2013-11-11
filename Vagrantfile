@@ -45,13 +45,15 @@ if ! grep -q 'arm-bcm2708' /home/vagrant/.bashrc; then
     echo 'export CCPREFIX="/opt/rpi/tools/arm-bcm2708/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-"' >> /home/vagrant/.bashrc
 fi
 
+# Grab and build VLC (NOTE: we're not yet testing for rpi-omxil, since that needs to be patched in for a cross-compile)
 if [ -e /usr/local/src/vlc ]; then
     cd /usr/local/src/vlc
     sudo chown . vagrant:vagrant
     git clone git://git.videolan.org/vlc.git
     cd vlc
     ./bootstrap
-    ./configure --enable-rpi-omxil --enable-dvbpsi --enable-x264
+    ./configure --prefix=/usr --enable-rpi-omxil --enable-dvbpsi --enable-x264 --disable-ogg --disable-mux_ogg --enable-run-as-root --disable-qt --disable-ncurses
+
     # make
     # sudo checkinstall --fstrans=no --install=yes --pkgname=vlc --pkgversion "1:2.2.0-git`date +%Y%m%d`-0.0raspbian" --default
 fi
